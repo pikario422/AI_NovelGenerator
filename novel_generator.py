@@ -170,7 +170,7 @@ def Novel_novel_directory_generate(
             logging.warning("generate_base_setting: No response.")
             return {"novel_setting_base": ""}
         debug_log(prompt, response.content)
-        return {"novel_setting_base": response.content.strip()}
+        return {"novel_setting_base": remove_think(response.content.strip())}
 
     def generate_character_setting(state: OverallState) -> Dict[str, str]:
         prompt = character_prompt.format(
@@ -181,7 +181,7 @@ def Novel_novel_directory_generate(
             logging.warning("generate_character_setting: No response.")
             return {"character_setting": ""}
         debug_log(prompt, response.content)
-        return {"character_setting": response.content.strip()}
+        return {"character_setting": remove_think(response.content.strip())}
 
     def generate_dark_lines(state: OverallState) -> Dict[str, str]:
         prompt = dark_lines_prompt.format(
@@ -192,7 +192,7 @@ def Novel_novel_directory_generate(
             logging.warning("generate_dark_lines: No response.")
             return {"dark_lines": ""}
         debug_log(prompt, response.content)
-        return {"dark_lines": response.content.strip()}
+        return {"dark_lines": remove_think(response.content.strip())}
 
     def finalize_novel_setting(state: OverallState) -> Dict[str, str]:
         prompt = finalize_setting_prompt.format(
@@ -205,7 +205,7 @@ def Novel_novel_directory_generate(
             logging.warning("finalize_novel_setting: No response.")
             return {"final_novel_setting": ""}
         debug_log(prompt, response.content)
-        return {"final_novel_setting": response.content.strip()}
+        return {"final_novel_setting": remove_think(response.content.strip())}
 
     def generate_novel_directory(state: OverallState) -> Dict[str, str]:
         prompt = novel_directory_prompt.format(
@@ -217,7 +217,7 @@ def Novel_novel_directory_generate(
             logging.warning("generate_novel_directory: No response.")
             return {"novel_directory": ""}
         debug_log(prompt, response.content)
-        return {"novel_directory": response.content.strip()}
+        return {"novel_directory": remove_think(response.content.strip())}
 
     # 构建状态图
     graph = StateGraph(OverallState)
@@ -306,7 +306,7 @@ def summarize_recent_chapters(model: ChatOpenAI, chapters_text_list: List[str]) 
     if not response:
         return ""
     debug_log(prompt, response.content)
-    return response.content.strip()
+    return remove_think(response.content.strip())
 
 # ============ 新增1：记录剧情要点/未解决冲突 ============
 
@@ -349,7 +349,7 @@ def update_plot_arcs(
         logging.warning("update_plot_arcs: No response.")
         return old_plot_arcs
     debug_log(prompt, response.content)
-    return response.content.strip()
+    return remove_think(response.content.strip())
 
 # ============ 生成章节草稿 & 定稿 ============
 
@@ -410,7 +410,7 @@ def generate_chapter_draft(
         chapter_outline = ""
     else:
         debug_log(outline_prompt_text, response_outline.content)
-        chapter_outline = response_outline.content.strip()
+        chapter_outline = remove_think(response_outline.content.strip())
 
     outlines_dir = os.path.join(filepath, "outlines")
     os.makedirs(outlines_dir, exist_ok=True)
@@ -439,7 +439,7 @@ def generate_chapter_draft(
         chapter_content = ""
     else:
         debug_log(writing_prompt_text, response_chapter.content)
-        chapter_content = response_chapter.content.strip()
+        chapter_content = remove_think(response_chapter.content.strip())
 
     chapters_dir = os.path.join(filepath, "chapters")
     os.makedirs(chapters_dir, exist_ok=True)
@@ -518,7 +518,7 @@ def finalize_chapter(
             logging.warning("update_global_summary: No response.")
             return old_summary
         debug_log(prompt, response.content)
-        return response.content.strip()
+        return remove_think(response.content.strip())
 
     new_global_summary = update_global_summary(chapter_text, old_global_summary)
 
@@ -533,7 +533,7 @@ def finalize_chapter(
             logging.warning("update_character_state: No response.")
             return old_state
         debug_log(prompt, response.content)
-        return response.content.strip()
+        return remove_think(response.content.strip())
 
     new_char_state = update_character_state(chapter_text, old_char_state)
 
@@ -591,7 +591,7 @@ def enrich_chapter_text(
         logging.warning("enrich_chapter_text: No response.")
         return chapter_text  # 无响应时就返回原文
     debug_log(prompt, response.content)
-    return response.content.strip()
+    return remove_think(response.content.strip())
 
 # ============ 导入外部知识文本 ============
 
@@ -672,3 +672,9 @@ def split_by_length(text: str, max_length: int = 500) -> List[str]:
         segments.append(segment.strip())
         start_idx = end_idx
     return segments
+
+import re
+
+def remove_think(text):
+    # 去掉大模型返回的think过程，只保留正文内容
+    return re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
